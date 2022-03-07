@@ -1,4 +1,3 @@
-import './App.css';
 import * as React from 'react';
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
@@ -13,7 +12,6 @@ import ListItemText from '@mui/material/ListItemText';
 import MailIcon from '@mui/icons-material/Mail';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
-import ListItemButton from '@mui/material/ListItemButton';
 import { DataGrid } from '@mui/x-data-grid';
 
 const drawerWidth = 240;
@@ -21,15 +19,28 @@ const drawerWidth = 240;
 const columns = [
   { field: 'id', headerName: 'ID', width: 90 },
   {
+    field: 'zeitpunkt',
+    headerName: 'Zeitpunkt',
+    width: 150,
+    valueGetter: (params) =>
+      `${new Date(params.row.timestamp).toLocaleString()}`
+  },
+  {
     field: 'richtung',
     headerName: 'Richtung',
-    width: 150,
+    width: 100,
     editable: false,
   },
   {
     field: 'sender',
     headerName: 'Sender',
-    width: 150,
+    width: 100,
+    editable: false,
+  },
+  {
+    field: 'empfaenger',
+    headerName: 'Empfänger',
+    width: 100,
     editable: false,
   },
   {
@@ -39,15 +50,9 @@ const columns = [
     width: 1000,
     editable: false,
     valueGetter: (params) =>
-      `${ JSON.stringify(params.row.message) }`,
+      `${JSON.stringify(params.row.nachricht)}`,
   }
 ];
-
-const rows = [
-  { id: 1, richtung: 'in', sender: '2', nachricht: 35 },
-  { id: 2, richtung: 'out', sender: '1', nachricht: 42 }
-];
-
 
 
 class Nachrichten extends React.Component {
@@ -58,6 +63,8 @@ class Nachrichten extends React.Component {
       isFetching: false,
       nachrichten: []
     };
+
+    this.refresh = this.refresh.bind(this);
   }
 
   componentDidMount() {
@@ -79,17 +86,26 @@ class Nachrichten extends React.Component {
       });
   }
 
+  refresh() {
+    this.fetchData();
+  }
+
 
 
   render() {
     return (
       <div id="Nachrichten">
         <h1> Nachrichten </h1>
+        <Button variant="contained" onClick={this.refresh} >Refresh</Button>
         <div style={{ height: 400, width: '100%' }}>
           <DataGrid
             rows={this.state.nachrichten}
             columns={columns}
-            pageSize={5}
+            pageSize={15}
+            sortModel={[{
+              field: 'zeitpunkt',
+              sort: 'desc',
+            }]}
           />
         </div>
       </div>
@@ -98,22 +114,54 @@ class Nachrichten extends React.Component {
 }
 
 
-const ManuelleNachricht = () => (
-  <div id="manuelleNachricht">
-    <h1> Manuelle Nachricht einspielen </h1>
-    <Box
-      sx={{
-        width: 500,
-        maxWidth: '100%',
-      }}
-    >
-      <textarea id="w3review" name="w3review" rows="20" cols="200">
+class ManuelleNachricht extends React.Component {
 
-      </textarea>
-    </Box>
-    <Button variant="contained">Nachricht Einspielen</Button>
-  </div>
-)
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      value: ''
+    };
+
+    this.manuelleNachrichtEinspielen = this.manuelleNachrichtEinspielen.bind(this);
+    this.handleChange = this.handleChange.bind(this);
+  }
+
+  handleChange(event) {
+    this.setState({ value: event.target.value });
+  }
+
+  manuelleNachrichtEinspielen() {
+    fetch('/nachrichten', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(JSON.parse(this.state.value))
+    })
+    this.setState({ value: '' });
+  }
+
+  render() {
+    return (
+      <div id="manuelleNachricht">
+        <h1> Manuelle Nachricht einspielen </h1>
+        <Box
+          sx={{
+            width: 500,
+            maxWidth: '100%',
+          }}
+        >
+          <textarea value={this.state.value} id="w3review" name="w3review" rows="20" cols="200" onChange={this.handleChange}>
+
+          </textarea>
+        </Box>
+        <Button variant="contained" onClick={this.manuelleNachrichtEinspielen} >Nachricht Einspielen</Button>
+      </div>
+    )
+  }
+}
 
 class Marktpartner extends React.Component {
 
@@ -123,6 +171,11 @@ class Marktpartner extends React.Component {
       isFetching: false,
       marktpartner: []
     };
+    this.refresh = this.refresh.bind(this);
+  }
+
+  refresh() {
+    this.fetchData();
   }
 
 
@@ -142,22 +195,34 @@ class Marktpartner extends React.Component {
   }
 
   render() {
+    const columns = [
+      { field: 'id', headerName: 'ID', width: 90 },
+      {
+        field: 'name',
+        headerName: 'name',
+        width: 100,
+        editable: false,
+      },
+      {
+        field: 'ansprechpartner',
+        headerName: 'Ansprechpartner',
+        width: 200,
+        editable: false,
+      }
+    ];
     return (
-      <div id="manuelleNachricht">
+      <div id="marktpartner">
         <h1> Marktpartner </h1>
 
-        <List>
-          {this.state.marktpartner.map((obj, index) => (
-            <ListItem button key={obj.id}  >
-              <ListItemIcon>
-                <MailIcon />
-              </ListItemIcon>
-              <ListItemText primary={obj.name} />
-            </ListItem>
-          ))}
+        <Button variant="contained" onClick={this.refresh} >Refresh</Button>
+        <div style={{ height: 400, width: '100%' }}>
+          <DataGrid
+            rows={this.state.marktpartner}
+            columns={columns}
+            pageSize={15}
+          />
+        </div>
 
-
-        </List>
       </div>
     );
   }
@@ -168,19 +233,108 @@ class Marktpartner extends React.Component {
 
 }
 
+class Kontaktdaten extends React.Component {
 
-const Kontaktdaten = () => (
-  <div id="manuelleNachricht">
-    <h1> Kontaktdaten </h1>
-    <TextField
-      required
-      id="outlined-required"
-      label="Ansprechpartner"
-      defaultValue=""
-    />
-  </div>
-)
+  constructor(props) {
+    super(props);
+    this.state = {
+      mode: "view",
+      isFetching: false,
+      eigeneKontaktdaten: ""
+    };
+    this.goToEditMode = this.goToEditMode.bind(this);
+    this.saveAndGoToViewMode = this.saveAndGoToViewMode.bind(this);
+    this.refresh = this.refresh.bind(this);
+    this.handleChange = this.handleChange.bind(this);
+  }
 
+  handleChange(event) {
+    if (this.state.mode === "view") {
+      return;
+    }
+    else {
+      const x = this.state.eigeneKontaktdaten;
+      x.ansprechpartner = event.target.value;
+      this.setState({ eigeneKontaktdaten: x });
+    }
+  }
+
+  refresh() {
+    this.fetchData();
+    this.setState({ mode: "view" });
+  }
+
+  goToEditMode() {
+    this.setState({ mode: "edit" });
+  }
+
+  saveAndGoToViewMode() {
+    this.setState({ mode: "view" });
+    fetch('/kontaktdaten', {
+      method: 'PUT',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(this.state.eigeneKontaktdaten)
+    })
+  }
+
+  fetchData() {
+
+    const USER_SERVICE_URL = '/eigeneKontaktdaten';
+
+    fetch(USER_SERVICE_URL)
+      .then(response => response.json())
+      .then(result => {
+        this.setState({ eigeneKontaktdaten: result, isFetching: false })
+      })
+      .catch(e => {
+        console.log(e);
+        this.setState({ ...this.state, isFetching: false });
+      });
+  }
+
+  componentDidMount() {
+    this.fetchData();
+  }
+
+  render() {
+    return (
+      <div id="kontadaten">
+        <h1> Kontaktdaten </h1>
+        <Button variant="contained" onClick={this.refresh} >Refresh</Button>
+        <br></br>
+        <Button
+          sx={{ m: 2 }}
+          disabled={this.state.mode === "edit"}
+          variant="contained"
+          onClick={this.goToEditMode}
+        >
+          Editieren
+        </Button>
+        <Button
+          sx={{ m: 2 }}
+          variant="contained"
+          onClick={this.saveAndGoToViewMode}
+          disabled={this.state.mode === "view"}
+        >
+          Save</Button>
+        <br></br>
+        <TextField
+          required
+          value={this.state.eigeneKontaktdaten.ansprechpartner}
+          id="outlined-required"
+          label="Ansprechpartner"
+          defaultValue=""
+          onChange={this.handleChange}
+        />
+      </div>
+    )
+
+
+  }
+}
 function App() {
 
   const list = [
@@ -203,7 +357,7 @@ function App() {
 
   ]
 
-  const [showNachrichten, setShowNachrichten] = React.useState(false);
+  const [showNachrichten, setShowNachrichten] = React.useState(true);
   const [showManuell, setShowManuell] = React.useState(false);
   const [showMarktpartner, setShowMarktpartner] = React.useState(false);
   const [showKontaktdaten, setShowKontaktdaten] = React.useState(false);
